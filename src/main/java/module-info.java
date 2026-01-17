@@ -6,6 +6,6 @@ module uu.downloaderjava {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
 
-    opens uu.downloaderjava to javafx.fxml;
-    exports uu.downloaderjava;
+    opens uu.downloader to javafx.fxml;
+    exports uu.downloader;
 }

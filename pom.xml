@@ -83,7 +83,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <option>--enable-native-access=javafx.graphics</option>
-                            <mainClass>uu.downloaderjava/uu.downloaderjava.HelloApplication</mainClass>
+                            <mainClass>uu.downloaderjava/uu.downloader.Application</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

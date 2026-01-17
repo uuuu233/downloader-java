@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="mainPane" xmlns:fx="http://javafx.com/fxml" fx:controller="uu.downloader.HomeController">
+    <!-- 自定义标题栏按钮 -->
+    <HBox alignment="CENTER" spacing="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+        <Button fx:id="btnMinimize" mnemonicParsing="false" prefHeight="20.0" prefWidth="20.0" text="–"
+                style="-fx-background-color: rgba(255, 255, 255, 0.0);
+                -fx-text-fill: white;
+                -fx-font-size: 18px;
+                -fx-background-radius: 4;
+                -fx-border-radius: 4;
+                -fx-border-color: transparent;
+                -fx-alignment: CENTER;
+                -fx-content-display: CENTER;
+                -fx-font-weight: bold;"
+        />
+        <Button fx:id="btnClose" mnemonicParsing="false" prefHeight="20.0" prefWidth="20.0" text="×"
+                style="
+                -fx-background-color: rgba(255, 255, 255, 0.0);
+                -fx-text-fill: white;
+                -fx-font-size: 18px;
+                -fx-background-radius: 4;
+                -fx-border-radius: 4;
+                -fx-border-color: transparent;
+                -fx-alignment: CENTER;
+                -fx-content-display: CENTER;
+                -fx-font-weight: bold;"/>
+    </HBox>
+    <!-- 底部容器，包含所有组件 -->
+    <VBox fx:id="bottomContainer" alignment="TOP_CENTER" spacing="10.0" AnchorPane.bottomAnchor="10.0"
+          AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0">
+        <!-- 下载目录行 -->
+        <HBox alignment="CENTER" spacing="10.0" prefHeight="40.0">
+            <Label text="下载目录" textFill="WHITE" prefWidth="100.0" alignment="CENTER_RIGHT"/>
+            <TextField fx:id="downloadPath" prefHeight="30.0" prefWidth="400.0" promptText="请选择下载目录"/>
+            <Button fx:id="btnSelectDownload" mnemonicParsing="false" prefHeight="30.0" prefWidth="70.0" text="选择"/>
+        </HBox>
+
+        <!-- 安装目录行 -->
+        <HBox alignment="CENTER" spacing="10.0" prefHeight="40.0">
+            <Label text="安装目录" textFill="WHITE" prefWidth="100.0" alignment="CENTER_RIGHT"/>
+            <TextField fx:id="installPath" prefHeight="30.0" prefWidth="400.0" promptText="请选择安装目录"/>
+            <Button fx:id="btnSelectInstall" mnemonicParsing="false" prefHeight="30.0" prefWidth="70.0" text="选择"/>
+        </HBox>
+
+        <!-- 复选框行 -->
+        <HBox alignment="CENTER_LEFT" spacing="20.0" prefHeight="40.0">
+            <CheckBox fx:id="chkAutoInstall" mnemonicParsing="false" text="下载完成后自动安装" textFill="WHITE"/>
+            <CheckBox fx:id="chkCreateShortcut" mnemonicParsing="false" text="创建桌面快捷方式" textFill="WHITE"/>
+        </HBox>
+
+        <!-- 进度条行 -->
+        <VBox alignment="CENTER_LEFT" spacing="10.0" prefHeight="40.0">
+            <ProgressBar fx:id="progressBar" prefWidth="580.0" progress="0.0"/>
+            <Label fx:id="progressLabel" text="0%" textFill="WHITE"/>
+        </VBox>
+
+        <!-- 下载按钮行 -->
+        <HBox alignment="CENTER" spacing="1.0" prefHeight="30.0">
+            <Button fx:id="btnDownload" mnemonicParsing="false" prefHeight="30.0" prefWidth="100.0" text="下载"/>
+        </HBox>
+        <!-- 空白行 -->
+        <HBox alignment="CENTER" spacing="1.0" prefHeight="5.0">
+        </HBox>
+    </VBox>
+</AnchorPane>
