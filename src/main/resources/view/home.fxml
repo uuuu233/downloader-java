@@ -39,14 +39,14 @@
         <!-- 下载目录行 -->
         <HBox alignment="CENTER" spacing="10.0" prefHeight="40.0">
             <Label text="下载目录" textFill="WHITE" prefWidth="100.0" alignment="CENTER_RIGHT"/>
-            <TextField fx:id="downloadPath" prefHeight="30.0" prefWidth="400.0" promptText="请选择下载目录"/>
+            <TextField fx:id="downloadPath" prefHeight="30.0" prefWidth="400.0" promptText="请选择下载目录" text="D:\Download"/>
             <Button fx:id="btnSelectDownload" mnemonicParsing="false" prefHeight="30.0" prefWidth="70.0" text="选择"/>
         </HBox>
 
         <!-- 安装目录行 -->
         <HBox alignment="CENTER" spacing="10.0" prefHeight="40.0">
             <Label text="安装目录" textFill="WHITE" prefWidth="100.0" alignment="CENTER_RIGHT"/>
-            <TextField fx:id="installPath" prefHeight="30.0" prefWidth="400.0" promptText="请选择安装目录"/>
+            <TextField fx:id="installPath" prefHeight="30.0" prefWidth="400.0" promptText="请选择安装目录" text="D:\Game"/>
             <Button fx:id="btnSelectInstall" mnemonicParsing="false" prefHeight="30.0" prefWidth="70.0" text="选择"/>
         </HBox>
 
