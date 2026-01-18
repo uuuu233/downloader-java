@@ -1,0 +1,9 @@
+aria2c --file-allocation=trunc --check-certificate=false -x 8 -s 8 -c "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+
+--file-allocation=trunc 预分配
+--check-certificate 检查 SSL
+-x 连接数
+-s 文件块数量
+-c 启动断点续传
+-d 指定文件保存目录
+-o 指定下载后的文件名
