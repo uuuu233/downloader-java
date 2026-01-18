@@ -5,6 +5,9 @@ module uu.downloaderjava {
     requires org.controlsfx.controls;
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
+    requires com.sun.jna;
+    requires com.sun.jna.platform;
+    requires java.xml;
 
     opens uu.downloader to javafx.fxml;
     exports uu.downloader;
