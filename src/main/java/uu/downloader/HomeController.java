@@ -27,6 +27,8 @@ public class HomeController {
     private Button btnSelectInstall;
     @FXML
     private TextField downloadPath;
+    @FXML
+    private TextField installPath;
 
     @FXML
     protected void onHelloButtonClick() {
@@ -43,17 +45,10 @@ public class HomeController {
         // 加载文件元信息, 再激活下载按钮
         FileMetadataLoader.load(() -> Platform.runLater(() -> btnDownload.setDisable(false)));
         // 实现拖放
-        mainPane.setOnMousePressed(e -> {
-            xOffset = e.getSceneX();
-            yOffset = e.getSceneY();
-        });
-        mainPane.setOnMouseDragged(e -> {
-            Stage stage = (Stage) mainPane.getScene().getWindow();
-            stage.setX(e.getScreenX() - xOffset);
-            stage.setY(e.getScreenY() - yOffset);
-        });
+        mainPane.setOnMousePressed(this::windowDrag);
+        mainPane.setOnMouseDragged(this::windowDrag);
 
-        // 设置 更新窗口控制按钮样式
+        // 设置 窗口控制按钮样式
         btnMinimize.setOnMouseEntered(this::updateWindowControlButtonStyle);
         btnMinimize.setOnMouseExited(this::updateWindowControlButtonStyle);
         btnClose.setOnMouseEntered(this::updateWindowControlButtonStyle);
@@ -74,6 +69,21 @@ public class HomeController {
     }
 
     /**
+     * 窗口拖动
+     */
+    private void windowDrag(MouseEvent event) {
+        String eventTypeName = event.getEventType().getName();
+        if (eventTypeName.equals("MOUSE_PRESSED")) {
+            xOffset = event.getSceneX();
+            yOffset = event.getSceneY();
+        } else if (eventTypeName.equals("MOUSE_DRAGGED")) {
+            Stage stage = (Stage) mainPane.getScene().getWindow();
+            stage.setX(event.getScreenX() - xOffset);
+            stage.setY(event.getScreenY() - yOffset);
+        }
+    }
+
+    /**
      * 更新窗口控制按钮样式
      */
     private void updateWindowControlButtonStyle(MouseEvent event) {
@@ -90,10 +100,6 @@ public class HomeController {
     private void selectDownloadDirectory(ActionEvent event) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择下载目录");
-        /*File file = new File(downloadPath.getText());
-        if (file.exists()) {
-            directoryChooser.setInitialDirectory(file);
-        }*/
         Stage stage = (Stage) mainPane.getScene().getWindow();
         File selectedDirectory = directoryChooser.showDialog(stage);
         if (selectedDirectory != null) {
@@ -104,14 +110,15 @@ public class HomeController {
     private void selectInstallDirectory(ActionEvent event) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("选择安装目录");
-        /*File file = new File(downloadPath.getText());
-        if (file.exists()) {
-            directoryChooser.setInitialDirectory(file);
-        }*/
         Stage stage = (Stage) mainPane.getScene().getWindow();
         File selectedDirectory = directoryChooser.showDialog(stage);
         if (selectedDirectory != null) {
-            downloadPath.setText(selectedDirectory.getAbsolutePath());
+            String path = selectedDirectory.getAbsolutePath();
+            if (!(path.endsWith("/") || path.endsWith("\\"))) {
+                path = path + File.separator;
+            }
+            path += FileMetadataLoader.directoryName;
+            installPath.setText(path);
         }
     }
 
