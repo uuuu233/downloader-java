@@ -2,6 +2,7 @@ package uu.downloader;
 
 import lombok.SneakyThrows;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -13,8 +14,7 @@ public class Aria2c {
     private static final Path aria2cPath = Path.of(System.getenv("APPDATA"), "uu", "aria2c", "aria2c.exe");
     private static String address;
 
-    @SneakyThrows
-    public static void start() {
+    public static void start() throws IOException {
         if (!Files.exists(aria2cPath)) {
             try (InputStream resourceAsStream = Aria2c.class.getResourceAsStream("/static/aria2c.exe")) {
                 Files.copy(resourceAsStream, aria2cPath);
@@ -37,7 +37,7 @@ public class Aria2c {
         address = "http://localhost:" + port + "/jsonrpc";
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         start();
         System.out.println();
     }

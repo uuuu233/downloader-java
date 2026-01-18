@@ -1,5 +1,6 @@
 package uu.downloader;
 
+import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -13,7 +14,7 @@ import javafx.stage.StageStyle;
 
 import java.io.IOException;
 
-public class Application extends javafx.application.Application {
+public class HomeApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         // 设置无边框 标题 可改大小
@@ -22,12 +23,12 @@ public class Application extends javafx.application.Application {
         stage.setResizable(false);
 
         // 设置背景图片
-        ImageView backgroundView = new ImageView(new Image(Application.class.getResourceAsStream("/static/background.png")));
+        ImageView backgroundView = new ImageView(new Image(HomeApplication.class.getResourceAsStream("/static/background.png")));
         backgroundView.setFitWidth(600);
         backgroundView.setFitHeight(400);
         backgroundView.setPreserveRatio(false);
 
-        Pane root = FXMLLoader.load(Application.class.getResource("/view/home.fxml"));
+        Pane root = FXMLLoader.load(HomeApplication.class.getResource("/view/home.fxml"));
         StackPane homePane = new StackPane();
         homePane.getChildren().addAll(backgroundView, root);
         Scene scene = new Scene(homePane, 600, 400);
@@ -40,6 +41,7 @@ public class Application extends javafx.application.Application {
 
         scene.setFill(Color.TRANSPARENT);
         stage.show();
+        // Aria2c.main(null);
     }
 
     public static void main(String[] args) {

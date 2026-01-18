@@ -1,1 +1,0 @@
-java -agentlib:native-image-agent=config-output-dir=d:/aa -jar ./target/demo-1.0-SNAPSHOT-jar-with-dependencies.jar
