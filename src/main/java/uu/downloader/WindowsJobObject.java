@@ -4,13 +4,13 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.platform.win32.WinBase;
+import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.win32.StdCallLibrary;
 import com.sun.jna.win32.W32APIOptions;
 
 import java.util.Arrays;
 import java.util.List;
-
 
 public class WindowsJobObject {
     // 定义Windows API接口
@@ -78,12 +78,12 @@ public class WindowsJobObject {
         }
     }
 
-
     public static void CreateProcessAndSetJobObject(String path) {
         Kernel32 kernel32 = Kernel32.INSTANCE;
         WinBase.STARTUPINFO startupInfo = new WinBase.STARTUPINFO();
-        // startupInfo.dwFlags = 1;
-        // startupInfo.wShowWindow
+        // 设置为隐藏窗口, 好像设不设置都一样
+        startupInfo.dwFlags = 1;
+        startupInfo.wShowWindow = new WinDef.WORD(0);
         WinBase.PROCESS_INFORMATION processInfo = new WinBase.PROCESS_INFORMATION();
         if (!kernel32.CreateProcessA(null,
                 path,

@@ -53,5 +53,4 @@ public class HomeController {
         btnClose.setOnAction(event -> ((Stage)mainPane.getScene().getWindow()).close());
     }
 
-
 }
