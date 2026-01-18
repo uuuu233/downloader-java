@@ -36,16 +36,6 @@ public class Application extends javafx.application.Application {
         Scene scene = new Scene(homePane, 600, 400);
         stage.setScene(scene);
 
-        // 设置栈面板样式，实现圆角效果
-        /*homePane.setStyle("""
-                -fx-background-radius: 20; 
-                -fx-background-color: transparent; 
-                -fx-border-radius: 20; 
-                -fx-border-color: transparent;
-                """);*/
-        // 设置栈面板样式，实现圆角效果
-        // homePane.setStyle("-fx-background-radius: 20; -fx-background-color: transparent; -fx-border-radius: 20; -fx-border-color: transparent;");
-
         Rectangle clip = new Rectangle(600, 400);
         clip.setArcWidth(20);
         clip.setArcHeight(20);
@@ -56,7 +46,6 @@ public class Application extends javafx.application.Application {
     }
 
     public static void main(String[] args) {
-        System.out.println(Application.class.getResource("hello-view.fxml"));
         launch();
     }
 }
