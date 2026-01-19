@@ -1,0 +1,1 @@
+aria2c --enable-rpc --rpc-listen-port=1688 --file-allocation=trunc --check-certificate=false -x 8 -s 8 -c

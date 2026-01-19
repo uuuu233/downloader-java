@@ -1,0 +1,50 @@
+{
+  "id" : "uu1768844053",
+  "jsonrpc" : "2.0",
+  "result" : {
+    "bitfield" : "ffff002000000800000200000100000040000020000008000000",
+    "completedLength" : "29343744",
+    "connections" : "8",
+    "dir" : "D:\\Download",
+    "downloadSpeed" : "10479547",
+    "files" : [ {
+      "completedLength" : "24117248",
+      "index" : "1",
+      "length" : "214254146",
+      "path" : "D:/Download/jdk-25_windows-x64_bin.zip",
+      "selected" : "true",
+      "uris" : [ {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      }, {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      }, {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      }, {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      }, {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      }, {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      }, {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      }, {
+        "status" : "used",
+        "uri" : "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip"
+      } ]
+    } ],
+    "gid" : "73f1285893407eb9",
+    "numPieces" : "205",
+    "pieceLength" : "1048576",
+    "status" : "active",
+    "totalLength" : "214254146",
+    "uploadLength" : "0",
+    "uploadSpeed" : "0"
+  }
+}

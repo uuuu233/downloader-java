@@ -1,4 +1,4 @@
-package uu.downloader;
+package uu.downloader.util;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;

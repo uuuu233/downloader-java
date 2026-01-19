@@ -12,4 +12,6 @@ module uu.downloaderjava {
 
     opens uu.downloader to javafx.fxml;
     exports uu.downloader;
+    exports uu.downloader.util;
+    opens uu.downloader.util to javafx.fxml;
 }

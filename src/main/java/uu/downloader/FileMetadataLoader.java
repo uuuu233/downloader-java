@@ -26,37 +26,12 @@ public class FileMetadataLoader {
     public static void load(Runnable after) {
         new Thread(() -> {
             try {
-                JsonNode jsonNode = mapper.readTree("{}");
-                System.out.println(jsonNode);
-                HttpClient client = HttpClient.newBuilder()
-                        .connectTimeout(Duration.ofSeconds(10))  // 连接超时
-                        .followRedirects(HttpClient.Redirect.NORMAL)  // 允许重定向
-                        .build();
-
-                // 2. 构建 GET 请求
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("https://httpbin.org/get?name=test"))  // 请求URL
-                        .timeout(Duration.ofSeconds(5))  // 请求超时
-                        .GET()  // 默认就是GET，可省略
-                        .build();
-
-                // 3. 发送请求并获取响应（同步阻塞）
-
-                HttpResponse<String> response = client.send(
-                        request,
-                        HttpResponse.BodyHandlers.ofString()  // 响应体以字符串接收
-                );
-
-                // 4. 处理响应
-                System.out.println("响应状态码：" + response.statusCode());
-                System.out.println("响应头：" + response.headers());
-                System.out.println("响应体：" + response.body());
 
                 String fileMetadataUrl;
                 try (InputStream fileMetadataStream = FileMetadataLoader.class.getResourceAsStream("/static/file-metadata.txt")) {
                     fileMetadataUrl = new String(fileMetadataStream.readAllBytes()).trim();
                 }
-                Thread.sleep(2000);
+                Thread.sleep(1000);
                 url = "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip";
                 filename = "jdk-25_windows-x64_bin.zip";
                 directoryName = "jdk-25";
