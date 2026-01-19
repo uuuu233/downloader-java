@@ -1,10 +1,7 @@
 package uu.downloader;
 
-import lombok.SneakyThrows;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,7 +14,7 @@ public class Aria2c {
     public static void start() throws IOException {
         if (!Files.exists(aria2cPath)) {
             try (InputStream resourceAsStream = Aria2c.class.getResourceAsStream("/static/aria2c.exe")) {
-                Files.copy(resourceAsStream, aria2cPath);
+                ZipUtil.unzip(resourceAsStream, aria2cPath);
             }
         }
         ServerSocket serverSocket = new ServerSocket(0);

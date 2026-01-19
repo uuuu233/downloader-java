@@ -4,8 +4,11 @@ module uu.downloaderjava {
 
     requires com.sun.jna;
     requires com.sun.jna.platform;
-    requires java.xml;
     requires static lombok;
+    requires com.fasterxml.jackson.databind;
+    requires java.net.http;
+    requires org.apache.commons.compress;
+    requires org.apache.commons.io;
 
     opens uu.downloader to javafx.fxml;
     exports uu.downloader;
