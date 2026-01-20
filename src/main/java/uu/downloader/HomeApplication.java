@@ -41,7 +41,7 @@ public class HomeApplication extends Application {
 
         scene.setFill(Color.TRANSPARENT);
         stage.show();
-        Aria2c.start();
+        Aria2c.init();
     }
 
     public static void main(String[] args) {

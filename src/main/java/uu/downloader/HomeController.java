@@ -1,9 +1,5 @@
 package uu.downloader;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,8 +10,6 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import lombok.SneakyThrows;
 import uu.downloader.util.FxUtil;
-import uu.downloader.util.HttpClientUtil;
-import uu.downloader.util.JsonUtil;
 import uu.downloader.util.ZipUtil;
 
 import java.io.File;
@@ -23,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class HomeController {
@@ -59,6 +54,7 @@ public class HomeController {
 
     @FXML
     public void initialize() {
+        chkCreateShortcut.setVisible(false);
         progressLabel.setText("初始化中");
         btnDownload.setDisable(true);
         // 加载文件元信息, 再激活下载按钮
@@ -138,44 +134,49 @@ public class HomeController {
                     return;
                 }
                 btnDownload.setText("安装");
+            } else {
+                this.download(FileMetadataLoader.url, downloadPath.getText(), FileMetadataLoader.filename, FileMetadataLoader.headers, () -> {
+                    if (chkAutoInstall.isSelected()) {
+                        download(event);
+                    }
+                });
             }
-            this.download(FileMetadataLoader.url, downloadPath.getText(), FileMetadataLoader.filename, FileMetadataLoader.headers, () -> {
-                if (chkAutoInstall.isSelected()) {
-                    install(Path.of(downloadPath.getText(), FileMetadataLoader.filename).toString(), installPath.getText());
-                }
-            });
-        } else if (btnDownload.getText().equals("安装")) {
+        }
+        if (btnDownload.getText().equals("安装")) {
             if (!checkInstallDirectory()) {
                 return;
             }
             install(Path.of(downloadPath.getText(), FileMetadataLoader.filename).toString(), installPath.getText());
-        } else if (btnDownload.getText().equals("取消")) {
+        }
+        if (btnDownload.getText().equals("取消")) {
             if (downloadOrUnzipThread != null) {
                 downloadOrUnzipThread.interrupt();
             }
         }
         // 更改 button text
-        if ("下载".equals(btnDownload.getText())) {
-            lastDownloadButtonText = btnDownload.getText();
-            btnDownload.setText("取消");
-            downloadPath.setDisable(true);
-            btnSelectDownload.setDisable(true);
-            btnSelectInstall.setDisable(false);
-            installPath.setDisable(false);
-        } else if (btnDownload.getText().equals("安装")) {
-            lastDownloadButtonText = btnDownload.getText();
-            btnDownload.setText("取消");
-            downloadPath.setDisable(false);
-            btnSelectDownload.setDisable(false);
-            btnSelectInstall.setDisable(true);
-            installPath.setDisable(true);
-        } else if (btnDownload.getText().equals("取消")) {
-            downloadPath.setDisable(false);
-            btnSelectDownload.setDisable(false);
-            btnSelectInstall.setDisable(false);
-            installPath.setDisable(false);
-            btnDownload.setText(lastDownloadButtonText);
-        }
+        Platform.runLater(() -> {
+            if ("下载".equals(btnDownload.getText())) {
+                lastDownloadButtonText = btnDownload.getText();
+                btnDownload.setText("取消");
+                downloadPath.setDisable(true);
+                btnSelectDownload.setDisable(true);
+                btnSelectInstall.setDisable(false);
+                installPath.setDisable(false);
+            } else if (btnDownload.getText().equals("安装")) {
+                lastDownloadButtonText = btnDownload.getText();
+                btnDownload.setText("取消");
+                downloadPath.setDisable(false);
+                btnSelectDownload.setDisable(false);
+                btnSelectInstall.setDisable(true);
+                installPath.setDisable(true);
+            } else if (btnDownload.getText().equals("取消")) {
+                downloadPath.setDisable(false);
+                btnSelectDownload.setDisable(false);
+                btnSelectInstall.setDisable(false);
+                installPath.setDisable(false);
+                btnDownload.setText(lastDownloadButtonText);
+            }
+        });
     }
 
     /**
@@ -236,9 +237,13 @@ public class HomeController {
         Path sourcePath = Path.of(source);
         long sum = sourcePath.toFile().length();
         AtomicLong atomicLong = new AtomicLong();
+        Random random = new Random();
         ZipUtil.unzip(sourcePath, Path.of(targetDirectory), (name, size) -> {
+            long l = atomicLong.addAndGet(size);
+            if (l < sum && random.nextInt(8) != 0) {
+                return;
+            }
             Platform.runLater(() -> {
-                long l = atomicLong.addAndGet(size);
                 if (l < sum) {
                     double progress = (double) l / sum;
                     progressLabel.setText((int)(progress * 100) + "%  " + name);
@@ -246,6 +251,9 @@ public class HomeController {
                 } else {
                     progressBar.setProgress(1);
                     progressLabel.setText("安装完成");
+                    btnDownload.setText("安装完成");
+                    btnDownload.setDisable(true);
+                    btnDownload.setVisible(false);
                 }
             });
         });
@@ -253,61 +261,34 @@ public class HomeController {
 
     private void download(final String url, final String destDirectory, final String destFileName, final List<String> headers, final Runnable installRunnable) {
         (downloadOrUnzipThread = new Thread(() -> {
-            JsonMapper mapper = JsonUtil.mapper;
-            String downloadJobId = null;
             try {
-                // 开始请求下载
-                ObjectNode objectNode = mapper.createObjectNode();
-                objectNode.put("id", Aria2c.requestId);
-                objectNode.put("jsonrpc", "2.0");
-                objectNode.put("method", "aria2.addUri");
-                ArrayNode paramsNode = mapper.createArrayNode()
-                        .add(mapper.createArrayNode().add(url))
-                        .add(mapper.createObjectNode().put("dir", destDirectory).put("out", destFileName));
-                if (!headers.isEmpty()) {
-                    ArrayNode headersNode = mapper.createArrayNode();
-                    for (String header : headers) {
-                        headersNode.add(header);
-                    }
-                }
-                objectNode.set("params", paramsNode);
-                JsonNode result = HttpClientUtil.post(Aria2c.address, objectNode.toString());
-                if ((downloadJobId = result.path("result").asText()).isEmpty()) {
+                try {
+                    Aria2c.addUrl(url, destDirectory, destFileName, headers);
+                } catch (Exception e) {
                     Platform.runLater(() -> progressLabel.setText("下载出现未知错误"));
-                    throw new RuntimeException();
+                    throw e;
                 }
                 // 下载中
                 for (;;) {
                     Thread.sleep(1000);
                     // 查询下载任务状态
-                    ObjectNode bodyNode = mapper.createObjectNode();
-                    bodyNode.put("id", Aria2c.requestId);
-                    bodyNode.put("jsonrpc", "2.0");
-                    bodyNode.put("method", "aria2.tellStatus");
-                    bodyNode.set("params", mapper.createArrayNode().add(downloadJobId));
-                    JsonNode responseNode = HttpClientUtil.post(Aria2c.address, bodyNode.toString());
-                    JsonNode resultNode = responseNode.path("result");
-                    String status = resultNode.path("status").asText();
-                    long completedLength = Long.parseLong(resultNode.path("completedLength").asText());
-                    long totalLength = Long.parseLong(resultNode.path("totalLength").asText());
-                    long speed = Long.parseLong(resultNode.path("downloadSpeed").asText());
-                    String speedText = convertSpeedToText(speed);
-                    double progress = (completedLength / (double)totalLength);
+                    Aria2c.DownloadJobInfo downloadJobInfo = Aria2c.tellStatus();
+                    String status = downloadJobInfo.status;
                     // 更新 UI 控件
                     if ("waiting".equals(status) || "active".equals(status)) {
                         Platform.runLater(() -> {
-                            progressLabel.setText((int)(progress * 100) + "%  " + speedText);
-                            progressBar.setProgress(progress);
+                            progressLabel.setText(downloadJobInfo.progressDescription + "  " + downloadJobInfo.speedDescription);
+                            progressBar.setProgress(downloadJobInfo.progress);
                         });
                     } else if ("error".equals(status)) {
-                        progressLabel.setText("下载出现错误: " + resultNode.path("errorMessage").asText());
+                        progressLabel.setText("下载错误: " + downloadJobInfo.message);
                         throw new RuntimeException();
                     } else if ("removed".equals(status)) {
                         break;
                     } else if ("complete".equals(status)) {
                         Platform.runLater(() -> {
                             progressLabel.setText("100%");
-                            progressBar.setProgress(progress);
+                            progressBar.setProgress(downloadJobInfo.progress);
                         });
                         break;
                     }
@@ -316,14 +297,7 @@ public class HomeController {
                 // ignore
             } finally {
                 // 取消下载任务
-                if (downloadJobId != null) {
-                    ObjectNode bodyNode = mapper.createObjectNode();
-                    bodyNode.put("id", Aria2c.requestId);
-                    bodyNode.put("jsonrpc", "2.0");
-                    bodyNode.put("method", "aria2.remove");
-                    bodyNode.set("params", mapper.createArrayNode().add(downloadJobId));
-                    HttpClientUtil.post(Aria2c.address, bodyNode.toString()).toPrettyString();
-                }
+                Aria2c.remove();
                 Platform.runLater(() -> {
                     if (progressBar.getProgress() < 1) {
                         btnDownload.setText("下载");
@@ -333,24 +307,11 @@ public class HomeController {
                         progressLabel.setText("下载完成");
                     }
                 });
-                if (progressBar.getProgress() >= 1 && chkAutoInstall.isSelected()) {
+                if (progressBar.getProgress() >= 1) {
                     installRunnable.run();
                 }
             }
         })).start();
     }
 
-    private static String convertSpeedToText(long speed) {
-        String speedText;
-        if (speed < 1) {
-            speedText = "0KB/s";
-        } else if (speed < 1048576) {
-            speedText = String.format("%.2fKB/s", (speed / 1024D));
-        } else if (speed < 1073741824) {
-            speedText = String.format("%.2fMB/s", (speed / 1048576D));
-        } else {
-            speedText = String.format("%.2fGB/s", (speed / 1073741824D));
-        }
-        return speedText;
-    }
 }

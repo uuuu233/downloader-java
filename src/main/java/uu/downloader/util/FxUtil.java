@@ -28,4 +28,5 @@ public class FxUtil {
         Optional<ButtonType> buttonType = alert.showAndWait();
         return "是".equals(buttonType.orElse(no).getText());
     }
+
 }
