@@ -2,6 +2,7 @@ package uu.downloader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -19,6 +20,7 @@ import uu.downloader.util.JsonUtil;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -248,7 +250,7 @@ public class HomeController {
 
     }
 
-    private void download(final String url, final String destDirectory, final String destFileName, final String headers, final Runnable installRunnable) {
+    private void download(final String url, final String destDirectory, final String destFileName, final List<String> headers, final Runnable installRunnable) {
         new Thread(() -> {
             try {
                 JsonMapper mapper = JsonUtil.mapper;
@@ -257,17 +259,16 @@ public class HomeController {
                 objectNode.put("id", Aria2c.requestId);
                 objectNode.put("jsonrpc", "2.0");
                 objectNode.put("method", "aria2.addUri");
-                objectNode.set("params", mapper.createArrayNode()
+                ArrayNode paramsNode = mapper.createArrayNode()
                         .add(mapper.createArrayNode().add(url))
-                        .add(mapper.createObjectNode().put("dir", destDirectory).put("out", destFileName))
-                );
+                        .add(mapper.createObjectNode().put("dir", destDirectory).put("out", destFileName));
                 if (!headers.isEmpty()) {
-                    // headers = Objects.toString(headers, "").replace("\\n", "\n");
-                    int i = 0;
-                    for (String s : headers.split("\n")) {
-                        objectNode.put("params[1].header[" + i + "]", s);
+                    ArrayNode headersNode = mapper.createArrayNode();
+                    for (String header : headers) {
+                        headersNode.add(header);
                     }
                 }
+                objectNode.set("params", paramsNode);
                 JsonNode result = HttpClientUtil.post(Aria2c.address, objectNode.toString());
                 if ((downloadJobId = result.path("result").asText()).isEmpty()) {
                     Platform.runLater(() -> progressLabel.setText("下载出现未知错误"));
@@ -294,16 +295,12 @@ public class HomeController {
                     String speedText;
                     if (speed < 1) {
                         speedText = "0KB/s";
-                    } else if (speed < 1024) {
-                        speedText = "1KB/s";
                     } else if (speed < 1048576) {
                         speedText = String.format("%.2fKB/s", (speed / 1024D));
                     } else if (speed < 1073741824) {
                         speedText = String.format("%.2fMB/s", (speed / 1048576D));
-                    } else if (speed < 1099511627776L) {
-                        speedText = String.format("%.2fGB/s", (speed / 1073741824D));
                     } else {
-                        speedText = "";
+                        speedText = String.format("%.2fGB/s", (speed / 1073741824D));
                     }
                     double progress = (completedLength / (double)totalLength);
                     if ("waiting".equals(status) || "active".equals(status) || "complete".equals(status)) {
