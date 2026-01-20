@@ -76,7 +76,11 @@ public class HomeController {
 
         // 绑定最小化和关闭按钮事件
         btnMinimize.setOnAction(event -> ((Stage)mainPane.getScene().getWindow()).setIconified(true));
-        btnClose.setOnAction(event -> ((Stage)mainPane.getScene().getWindow()).close());
+        btnClose.setOnAction(event -> {
+            if (!"取消".equals(btnDownload.getText()) || FxUtil.showYesNoAlert("确定要退出吗?")) {
+                ((Stage)mainPane.getScene().getWindow()).close();
+            }
+        });
 
         // 下载按钮
         btnDownload.setOnAction(this::download);
