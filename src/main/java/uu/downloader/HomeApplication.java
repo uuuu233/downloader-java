@@ -45,8 +45,4 @@ public class HomeApplication extends Application {
         stage.show();
         Aria2c.init();
     }
-
-    public static void main(String[] args) {
-        launch();
-    }
 }
