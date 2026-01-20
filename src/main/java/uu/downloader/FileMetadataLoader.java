@@ -1,36 +1,60 @@
 package uu.downloader;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import uu.downloader.util.HttpClientUtil;
+import uu.downloader.util.JsonUtil;
+
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class FileMetadataLoader {
     public static String url;
     public static String filename;
     public static String directoryName;
     public static String shortcutName;
+    public static String defaultInstallPath;
     public static String applicationName;
     public static List<String> headers;
 
     public static void load(Runnable after) {
         new Thread(() -> {
             try {
-
                 String fileMetadataUrl;
                 try (InputStream fileMetadataStream = FileMetadataLoader.class.getResourceAsStream("/static/file-metadata.txt")) {
                     fileMetadataUrl = new String(fileMetadataStream.readAllBytes()).trim();
                 }
-                Thread.sleep(1000);
-                url = "https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.zip";
-                filename = "jdk-25_windows-x64_bin.zip";
-                directoryName = "jdk-25";
-                shortcutName = "java";
-                applicationName = "java.exe";
+                String docid = fileMetadataUrl.substring("https://docs.qq.com/markdown/".length(), !fileMetadataUrl.contains("?") ? fileMetadataUrl.length() : fileMetadataUrl.indexOf("?"));
+                JsonNode resultNode = HttpClientUtil.get("https://docs.qq.com/dop-api/clientvar?id=" + docid, new HashMap<>(){{
+                    put("Referer", fileMetadataUrl);
+                }});
+                String globalPadId = resultNode.at("/result/clientVars/collab_client_vars/globalPadId").asText();
+                resultNode = HttpClientUtil.post("https://docs.qq.com/api/markdown/read/data", JsonUtil.mapper.createObjectNode().put("file_id", globalPadId).toString());
+                String markdown = resultNode.at("/result/mark_down").asText();
+                Properties properties = new Properties();
+                try (InputStreamReader inputStream = new InputStreamReader(new ByteArrayInputStream(markdown.getBytes(StandardCharsets.UTF_8)))) {
+                    properties.load(inputStream);
+                }
+
+                url = properties.getProperty("url");
+                filename = properties.getProperty("filename");
+                directoryName = properties.getProperty("directoryName");
+                shortcutName = properties.getProperty("shortcutName");
+                applicationName = properties.getProperty("applicationName");
                 headers = new ArrayList<>();
+                if (properties.getProperty("headers") != null) {
+                    String hs = properties.getProperty("headers").trim();
+                    if (!hs.isEmpty()) {
+                        headers.addAll(Arrays.asList(hs.split("\\^")));
+                    }
+                }
                 after.run();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }).start();
     }
+
 }
