@@ -40,11 +40,11 @@ public class Aria2c {
                 "-x 8",
                 "-s 8",
                 "-c");
-        System.out.println(String.join(" ", args));
-        // WindowsJobObject.CreateProcessAndSetJobObject(aria2cPath.normalize() + " " + String.join(" ", args));
+        // System.out.println(String.join(" ", args));
+        WindowsJobObject.CreateProcessAndSetJobObject(aria2cPath.normalize() + " " + String.join(" ", args));
         address = "http://localhost:" + port + "/jsonrpc";
-        address = "http://localhost:1688/jsonrpc";
-        System.out.println(address);
+        // address = "http://localhost:1688/jsonrpc";
+        // System.out.println(address);
     }
 
     public static void addUrl(String url, String destDirectory, String destFileName, List<String> headers) {
