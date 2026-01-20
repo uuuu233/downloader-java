@@ -12,17 +12,18 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import lombok.Getter;
 import lombok.SneakyThrows;
+import uu.downloader.util.FxUtil;
 import uu.downloader.util.HttpClientUtil;
 import uu.downloader.util.JsonUtil;
+import uu.downloader.util.ZipUtil;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class HomeController {
     @FXML
@@ -41,10 +42,8 @@ public class HomeController {
     private TextField downloadPath;
     @FXML
     private TextField installPath;
-    @Getter
     @FXML
     private ProgressBar progressBar;
-    @Getter
     @FXML
     private Label progressLabel;
     @FXML
@@ -83,6 +82,8 @@ public class HomeController {
 
         // 下载按钮
         btnDownload.setOnAction(this::download);
+
+        // 选择目录
         btnSelectDownload.setOnAction(this::selectDownloadDirectory);
         btnSelectInstall.setOnAction(this::selectInstallDirectory);
     }
@@ -100,13 +101,7 @@ public class HomeController {
                 return true;
             }
         } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("警告");
-            alert.setHeaderText(null);
-            alert.setContentText("安装目录必须为空");
-            alert.getButtonTypes().setAll(new ButtonType("好的"));
-            // 显示对话框并等待用户响应
-            alert.showAndWait();
+            FxUtil.showOkAlert("安装目录必须为空");
             return false;
         }
     }
@@ -124,13 +119,7 @@ public class HomeController {
                 return true;
             }
         } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("警告");
-            alert.setHeaderText(null);
-            alert.setContentText("无法下载到这个目录");
-            alert.getButtonTypes().setAll(new ButtonType("好的"));
-            // 显示对话框并等待用户响应
-            alert.showAndWait();
+            FxUtil.showOkAlert("无法下载到这个目录");
             return false;
         }
     }
@@ -145,33 +134,27 @@ public class HomeController {
             Path path = Path.of(downloadPath.getText(), FileMetadataLoader.filename);
             Path pathAria2 = Path.of(downloadPath.getText(), FileMetadataLoader.filename + ".aria2");
             if (Files.exists(path) && !Files.exists(pathAria2)) {
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("警告");
-                alert.setHeaderText(null);
-                alert.setContentText("检测到已经下载完成, 是否直接安装?");
-                alert.getButtonTypes().setAll(new ButtonType("是", ButtonBar.ButtonData.YES),
-                        new ButtonType("否", ButtonBar.ButtonData.CANCEL_CLOSE));
-                // 显示对话框并等待用户响应
-                Optional<ButtonType> buttonType = alert.showAndWait();
-                ButtonType clickButton = buttonType.orElse(ButtonType.CANCEL);
-                if ("否".equals(clickButton.getText())) {
+                if (!FxUtil.showYesNoAlert("检测到已经下载完成, 是否直接安装?")) {
                     return;
                 }
+                btnDownload.setText("安装");
             }
             this.download(FileMetadataLoader.url, downloadPath.getText(), FileMetadataLoader.filename, FileMetadataLoader.headers, () -> {
                 if (chkAutoInstall.isSelected()) {
-                    install("", "");
+                    install(Path.of(downloadPath.getText(), FileMetadataLoader.filename).toString(), installPath.getText());
                 }
             });
         } else if (btnDownload.getText().equals("安装")) {
             if (!checkInstallDirectory()) {
                 return;
             }
+            install(Path.of(downloadPath.getText(), FileMetadataLoader.filename).toString(), installPath.getText());
         } else if (btnDownload.getText().equals("取消")) {
             if (downloadOrUnzipThread != null) {
                 downloadOrUnzipThread.interrupt();
             }
         }
+        // 更改 button text
         if ("下载".equals(btnDownload.getText())) {
             lastDownloadButtonText = btnDownload.getText();
             btnDownload.setText("取消");
@@ -250,7 +233,22 @@ public class HomeController {
     }
 
     private void install(String source, String targetDirectory) {
-
+        Path sourcePath = Path.of(source);
+        long sum = sourcePath.toFile().length();
+        AtomicLong atomicLong = new AtomicLong();
+        ZipUtil.unzip(sourcePath, Path.of(targetDirectory), (name, size) -> {
+            Platform.runLater(() -> {
+                long l = atomicLong.addAndGet(size);
+                if (l < sum) {
+                    double progress = (double) l / sum;
+                    progressLabel.setText((int)(progress * 100) + "%  " + name);
+                    progressBar.setProgress(progress);
+                } else {
+                    progressBar.setProgress(1);
+                    progressLabel.setText("安装完成");
+                }
+            });
+        });
     }
 
     private void download(final String url, final String destDirectory, final String destFileName, final List<String> headers, final Runnable installRunnable) {
@@ -293,32 +291,24 @@ public class HomeController {
                     long completedLength = Long.parseLong(resultNode.path("completedLength").asText());
                     long totalLength = Long.parseLong(resultNode.path("totalLength").asText());
                     long speed = Long.parseLong(resultNode.path("downloadSpeed").asText());
-                    String speedText;
-                    if (speed < 1) {
-                        speedText = "0KB/s";
-                    } else if (speed < 1048576) {
-                        speedText = String.format("%.2fKB/s", (speed / 1024D));
-                    } else if (speed < 1073741824) {
-                        speedText = String.format("%.2fMB/s", (speed / 1048576D));
-                    } else {
-                        speedText = String.format("%.2fGB/s", (speed / 1073741824D));
-                    }
+                    String speedText = convertSpeedToText(speed);
                     double progress = (completedLength / (double)totalLength);
                     // 更新 UI 控件
-                    if ("waiting".equals(status) || "active".equals(status) || "complete".equals(status)) {
+                    if ("waiting".equals(status) || "active".equals(status)) {
                         Platform.runLater(() -> {
-                            progressLabel.setText(progress < 1 ? (int)(progress * 100) + "%  " + speedText : "100%");
+                            progressLabel.setText((int)(progress * 100) + "%  " + speedText);
                             progressBar.setProgress(progress);
                         });
-                        if ("complete".equals(status)) {
-                            System.out.println("下载已完成");
-                            break;
-                        }
                     } else if ("error".equals(status)) {
                         progressLabel.setText("下载出现错误: " + resultNode.path("errorMessage").asText());
                         throw new RuntimeException();
                     } else if ("removed".equals(status)) {
-                        System.out.println("下载任务 removed");
+                        break;
+                    } else if ("complete".equals(status)) {
+                        Platform.runLater(() -> {
+                            progressLabel.setText("100%");
+                            progressBar.setProgress(progress);
+                        });
                         break;
                     }
                 }
@@ -335,13 +325,32 @@ public class HomeController {
                     HttpClientUtil.post(Aria2c.address, bodyNode.toString()).toPrettyString();
                 }
                 Platform.runLater(() -> {
-                    btnDownload.setText("下载");
-                    progressLabel.setText((int)(progressBar.getProgress() * 100) + "%");
+                    if (progressBar.getProgress() < 1) {
+                        btnDownload.setText("下载");
+                        progressLabel.setText((int)(progressBar.getProgress() * 100) + "%");
+                    } else {
+                        btnDownload.setText("安装");
+                        progressLabel.setText("下载完成");
+                    }
                 });
                 if (progressBar.getProgress() >= 1 && chkAutoInstall.isSelected()) {
                     installRunnable.run();
                 }
             }
         })).start();
+    }
+
+    private static String convertSpeedToText(long speed) {
+        String speedText;
+        if (speed < 1) {
+            speedText = "0KB/s";
+        } else if (speed < 1048576) {
+            speedText = String.format("%.2fKB/s", (speed / 1024D));
+        } else if (speed < 1073741824) {
+            speedText = String.format("%.2fMB/s", (speed / 1048576D));
+        } else {
+            speedText = String.format("%.2fGB/s", (speed / 1073741824D));
+        }
+        return speedText;
     }
 }
