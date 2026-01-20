@@ -52,6 +52,7 @@ public class HomeController {
     @FXML
     private CheckBox chkCreateShortcut;
 
+    private Thread downloadOrUnzipThread;
     // 用于存储窗口拖动的坐标
     private double xOffset = 0;
     private double yOffset = 0;
@@ -167,9 +168,11 @@ public class HomeController {
                 return;
             }
         } else if (btnDownload.getText().equals("取消")) {
-
+            if (downloadOrUnzipThread != null) {
+                downloadOrUnzipThread.interrupt();
+            }
         }
-        if (btnDownload.getText().equals("下载")) {
+        if ("下载".equals(btnDownload.getText())) {
             lastDownloadButtonText = btnDownload.getText();
             btnDownload.setText("取消");
             downloadPath.setDisable(true);
@@ -251,10 +254,11 @@ public class HomeController {
     }
 
     private void download(final String url, final String destDirectory, final String destFileName, final List<String> headers, final Runnable installRunnable) {
-        new Thread(() -> {
+        (downloadOrUnzipThread = new Thread(() -> {
+            JsonMapper mapper = JsonUtil.mapper;
+            String downloadJobId = null;
             try {
-                JsonMapper mapper = JsonUtil.mapper;
-                String downloadJobId;
+                // 开始请求下载
                 ObjectNode objectNode = mapper.createObjectNode();
                 objectNode.put("id", Aria2c.requestId);
                 objectNode.put("jsonrpc", "2.0");
@@ -274,19 +278,16 @@ public class HomeController {
                     Platform.runLater(() -> progressLabel.setText("下载出现未知错误"));
                     throw new RuntimeException();
                 }
+                // 下载中
                 for (;;) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Thread.sleep(1000);
+                    // 查询下载任务状态
                     ObjectNode bodyNode = mapper.createObjectNode();
                     bodyNode.put("id", Aria2c.requestId);
                     bodyNode.put("jsonrpc", "2.0");
                     bodyNode.put("method", "aria2.tellStatus");
                     bodyNode.set("params", mapper.createArrayNode().add(downloadJobId));
                     JsonNode responseNode = HttpClientUtil.post(Aria2c.address, bodyNode.toString());
-                    System.out.println(responseNode.toPrettyString());
                     JsonNode resultNode = responseNode.path("result");
                     String status = resultNode.path("status").asText();
                     long completedLength = Long.parseLong(resultNode.path("completedLength").asText());
@@ -303,9 +304,10 @@ public class HomeController {
                         speedText = String.format("%.2fGB/s", (speed / 1073741824D));
                     }
                     double progress = (completedLength / (double)totalLength);
+                    // 更新 UI 控件
                     if ("waiting".equals(status) || "active".equals(status) || "complete".equals(status)) {
                         Platform.runLater(() -> {
-                            progressLabel.setText((int) (progress * 100) + "%  " + speedText);
+                            progressLabel.setText(progress < 1 ? (int)(progress * 100) + "%  " + speedText : "100%");
                             progressBar.setProgress(progress);
                         });
                         if ("complete".equals(status)) {
@@ -320,12 +322,26 @@ public class HomeController {
                         break;
                     }
                 }
+            } catch (InterruptedException _) {
+                // ignore
             } finally {
-                Platform.runLater(() -> btnDownload.setText("下载"));
+                // 取消下载任务
+                if (downloadJobId != null) {
+                    ObjectNode bodyNode = mapper.createObjectNode();
+                    bodyNode.put("id", Aria2c.requestId);
+                    bodyNode.put("jsonrpc", "2.0");
+                    bodyNode.put("method", "aria2.remove");
+                    bodyNode.set("params", mapper.createArrayNode().add(downloadJobId));
+                    HttpClientUtil.post(Aria2c.address, bodyNode.toString()).toPrettyString();
+                }
+                Platform.runLater(() -> {
+                    btnDownload.setText("下载");
+                    progressLabel.setText((int)(progressBar.getProgress() * 100) + "%");
+                });
                 if (progressBar.getProgress() >= 1 && chkAutoInstall.isSelected()) {
                     installRunnable.run();
                 }
             }
-        }).start();
+        })).start();
     }
 }
