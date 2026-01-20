@@ -30,11 +30,13 @@ public class HttpClientUtil {
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)) // POST 方法 + 请求体
                 .build();
         HttpResponse<String> response = httpclient.send(request, HttpResponse.BodyHandlers.ofString());
+        return JsonUtil.mapper.readTree(response.body());
         // 根据状态码判断请求是否成功
-        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+        // aria2c remove 响应 http status 400
+        /*if (response.statusCode() >= 200 && response.statusCode() < 300) {
             return JsonUtil.mapper.readTree(response.body());
         } else {
             throw new RuntimeException();
-        }
+        }*/
     }
 }

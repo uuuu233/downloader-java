@@ -1,5 +1,6 @@
 package uu.downloader.util;
 
+import lombok.SneakyThrows;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.IOUtils;
@@ -7,10 +8,28 @@ import org.apache.commons.io.IOUtils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.BiConsumer;
 
 public class ZipUtil {
 
-    public static void unzip(InputStream inputStream, Path dest) throws IOException {
+    @SneakyThrows
+    public static void unzip(Path source, Path dest, BiConsumer<String, Long> zipping) {
+        try (FileInputStream fileInputStream = new FileInputStream(source.toFile())) {
+            unzip(fileInputStream, dest, zipping);
+        }
+    }
+
+    @SneakyThrows
+    public static void unzip(Path source, Path dest) {
+        unzip(source, dest, null);
+    }
+
+    public static void unzip(InputStream inputStream, Path dest) {
+        unzip(inputStream, dest, null);
+    }
+
+    @SneakyThrows
+    public static void unzip(InputStream inputStream, Path dest, BiConsumer<String, Long> zipping) {
         if (!Files.exists(dest)) {
             Files.createDirectories(dest);
         }
@@ -18,6 +37,9 @@ public class ZipUtil {
             ArchiveEntry entry;
             // 遍历ZIP中的每个条目（文件/文件夹）
             while ((entry = zis.getNextEntry()) != null) {
+                if (zipping != null) {
+                    zipping.accept(entry.getName(), entry.getSize());
+                }
                 Path entryPath = dest.resolve(entry.getName());
 
                 // 处理文件夹
@@ -34,4 +56,5 @@ public class ZipUtil {
             }
         }
     }
+
 }
