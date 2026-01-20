@@ -21,16 +21,20 @@ public class HttpClientUtil {
                 .build();
     }
 
-    @SneakyThrows
+    @SneakyThrows()
     public static JsonNode post(String url, String body) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url)) // 替换为你的目标 URL
-                .header("Content-Type", "application/json") // 指定请求体格式为 JSON
-                .header("Accept", "application/json") // 期望返回 JSON
-                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)) // POST 方法 + 请求体
-                .build();
-        HttpResponse<String> response = httpclient.send(request, HttpResponse.BodyHandlers.ofString());
-        return JsonUtil.mapper.readTree(response.body());
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url)) // 替换为你的目标 URL
+                    .header("Content-Type", "application/json") // 指定请求体格式为 JSON
+                    .header("Accept", "application/json") // 期望返回 JSON
+                    .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)) // POST 方法 + 请求体
+                    .build();
+            HttpResponse<String> response = httpclient.send(request, HttpResponse.BodyHandlers.ofString());
+            return JsonUtil.mapper.readTree(response.body());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         // 根据状态码判断请求是否成功
         // aria2c remove 响应 http status 400
         /*if (response.statusCode() >= 200 && response.statusCode() < 300) {

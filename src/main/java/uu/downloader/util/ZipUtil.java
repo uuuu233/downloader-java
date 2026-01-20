@@ -16,6 +16,8 @@ public class ZipUtil {
     public static void unzip(Path source, Path dest, BiConsumer<String, Long> zipping) {
         try (FileInputStream fileInputStream = new FileInputStream(source.toFile())) {
             unzip(fileInputStream, dest, zipping);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -30,33 +32,37 @@ public class ZipUtil {
 
     @SneakyThrows
     public static void unzip(InputStream inputStream, Path dest, BiConsumer<String, Long> zipping) {
-        if (!Files.exists(dest)) {
-            Files.createDirectories(dest);
-        }
-        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream)) {
-            ArchiveEntry entry;
-            // 遍历ZIP中的每个条目（文件/文件夹）
-            while ((entry = zis.getNextEntry()) != null) {
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
-                if (zipping != null) {
-                    zipping.accept(entry.getName(), entry.getSize());
-                }
-                Path entryPath = dest.resolve(entry.getName());
+        try {
+            if (!Files.exists(dest)) {
+                Files.createDirectories(dest);
+            }
+            try (ZipArchiveInputStream zis = new ZipArchiveInputStream(inputStream)) {
+                ArchiveEntry entry;
+                // 遍历ZIP中的每个条目（文件/文件夹）
+                while ((entry = zis.getNextEntry()) != null) {
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
+                    }
+                    if (zipping != null) {
+                        zipping.accept(entry.getName(), entry.getSize());
+                    }
+                    Path entryPath = dest.resolve(entry.getName());
 
-                // 处理文件夹
-                if (entry.isDirectory()) {
-                    Files.createDirectories(entryPath);
-                    continue;
-                }
+                    // 处理文件夹
+                    if (entry.isDirectory()) {
+                        Files.createDirectories(entryPath);
+                        continue;
+                    }
 
-                // 处理文件（自动创建父目录）
-                Files.createDirectories(entryPath.getParent());
-                try (OutputStream out = Files.newOutputStream(entryPath)) {
-                    IOUtils.copy(zis, out);
+                    // 处理文件（自动创建父目录）
+                    Files.createDirectories(entryPath.getParent());
+                    try (OutputStream out = Files.newOutputStream(entryPath)) {
+                        IOUtils.copy(zis, out);
+                    }
                 }
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
