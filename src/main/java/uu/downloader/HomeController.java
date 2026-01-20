@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class HomeController {
@@ -57,10 +56,13 @@ public class HomeController {
         chkCreateShortcut.setVisible(false);
         progressLabel.setText("初始化中");
         btnDownload.setDisable(true);
+        installPath.setDisable(true);
         // 加载文件元信息, 再激活下载按钮
-        FileMetadataLoader.load(() -> Platform.runLater(() -> {
+        FileMetadata.load(() -> Platform.runLater(() -> {
             btnDownload.setDisable(false);
             progressLabel.setText("0%");
+            installPath.setText(FileMetadata.defaultInstallPath);
+            installPath.setDisable(false);
         }));
         // 实现拖放
         mainPane.setOnMousePressed(this::windowDrag);
@@ -82,6 +84,9 @@ public class HomeController {
         // 选择目录
         btnSelectDownload.setOnAction(this::selectDownloadDirectory);
         btnSelectInstall.setOnAction(this::selectInstallDirectory);
+
+        // 选项配置
+        chkAutoInstall.setSelected(true);
     }
 
     @SneakyThrows
@@ -127,15 +132,15 @@ public class HomeController {
             } else if (!checkDownloadDirectory()) {
                 return;
             }
-            Path path = Path.of(downloadPath.getText(), FileMetadataLoader.filename);
-            Path pathAria2 = Path.of(downloadPath.getText(), FileMetadataLoader.filename + ".aria2");
+            Path path = Path.of(downloadPath.getText(), FileMetadata.filename);
+            Path pathAria2 = Path.of(downloadPath.getText(), FileMetadata.filename + ".aria2");
             if (Files.exists(path) && !Files.exists(pathAria2)) {
                 if (!FxUtil.showYesNoAlert("检测到已经下载完成, 是否直接安装?")) {
                     return;
                 }
                 btnDownload.setText("安装");
             } else {
-                this.download(FileMetadataLoader.url, downloadPath.getText(), FileMetadataLoader.filename, FileMetadataLoader.headers, () -> {
+                this.download(FileMetadata.url, downloadPath.getText(), FileMetadata.filename, FileMetadata.headers, () -> {
                     if (chkAutoInstall.isSelected()) {
                         AtomicLong atomicLong = new AtomicLong();
                         Platform.runLater(() -> {
@@ -150,7 +155,7 @@ public class HomeController {
                                 btnSelectInstall.setDisable(true);
                                 installPath.setDisable(true);
                             });
-                            install(Path.of(downloadPath.getText(), FileMetadataLoader.filename).toString(), installPath.getText());
+                            install(Path.of(downloadPath.getText(), FileMetadata.filename).toString(), installPath.getText());
                         }
                     }
                 });
@@ -160,7 +165,7 @@ public class HomeController {
             if (!checkInstallDirectory()) {
                 return;
             }
-            install(Path.of(downloadPath.getText(), FileMetadataLoader.filename).toString(), installPath.getText());
+            install(Path.of(downloadPath.getText(), FileMetadata.filename).toString(), installPath.getText());
         }
         if (btnDownload.getText().equals("取消")) {
             if (downloadOrUnzipThread != null) {
@@ -236,7 +241,7 @@ public class HomeController {
             if (!(path.endsWith("/") || path.endsWith("\\"))) {
                 path = path + File.separator;
             }
-            path += FileMetadataLoader.directoryName;
+            path += FileMetadata.directoryName;
             installPath.setText(path);
         }
     }

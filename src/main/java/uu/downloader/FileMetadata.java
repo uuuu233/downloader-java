@@ -8,9 +8,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 
-public class FileMetadataLoader {
+public class FileMetadata {
     public static String url;
     public static String filename;
     public static String directoryName;
@@ -23,7 +24,7 @@ public class FileMetadataLoader {
         new Thread(() -> {
             try {
                 String fileMetadataUrl;
-                try (InputStream fileMetadataStream = FileMetadataLoader.class.getResourceAsStream("/static/file-metadata.txt")) {
+                try (InputStream fileMetadataStream = FileMetadata.class.getResourceAsStream("/static/file-metadata.txt")) {
                     fileMetadataUrl = new String(fileMetadataStream.readAllBytes()).trim();
                 }
                 String docid = fileMetadataUrl.substring("https://docs.qq.com/markdown/".length(), !fileMetadataUrl.contains("?") ? fileMetadataUrl.length() : fileMetadataUrl.indexOf("?"));
@@ -43,6 +44,10 @@ public class FileMetadataLoader {
                 directoryName = properties.getProperty("directoryName");
                 shortcutName = properties.getProperty("shortcutName");
                 applicationName = properties.getProperty("applicationName");
+                defaultInstallPath = properties.getProperty("defaultInstallPath");
+                if (defaultInstallPath == null) {
+                    defaultInstallPath = Path.of("d:\\Game", directoryName).toString();
+                }
                 headers = new ArrayList<>();
                 if (properties.getProperty("headers") != null) {
                     String hs = properties.getProperty("headers").trim();
@@ -55,6 +60,10 @@ public class FileMetadataLoader {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(Path.of("d:/Game", "asss").toString());
     }
 
 }
