@@ -137,7 +137,21 @@ public class HomeController {
             } else {
                 this.download(FileMetadataLoader.url, downloadPath.getText(), FileMetadataLoader.filename, FileMetadataLoader.headers, () -> {
                     if (chkAutoInstall.isSelected()) {
-                        download(event);
+                        AtomicLong atomicLong = new AtomicLong();
+                        Platform.runLater(() -> {
+                            if (!checkInstallDirectory()) {
+                                atomicLong.addAndGet(1);
+                            }
+                        });
+                        if (atomicLong.get() == 0) {
+                            Platform.runLater(() -> {
+                                lastDownloadButtonText = "安装";
+                                btnDownload.setText("取消");
+                                btnSelectInstall.setDisable(true);
+                                installPath.setDisable(true);
+                            });
+                            install(Path.of(downloadPath.getText(), FileMetadataLoader.filename).toString(), installPath.getText());
+                        }
                     }
                 });
             }
@@ -154,29 +168,23 @@ public class HomeController {
             }
         }
         // 更改 button text
-        Platform.runLater(() -> {
-            if ("下载".equals(btnDownload.getText())) {
-                lastDownloadButtonText = btnDownload.getText();
-                btnDownload.setText("取消");
-                downloadPath.setDisable(true);
-                btnSelectDownload.setDisable(true);
-                btnSelectInstall.setDisable(false);
-                installPath.setDisable(false);
-            } else if (btnDownload.getText().equals("安装")) {
-                lastDownloadButtonText = btnDownload.getText();
-                btnDownload.setText("取消");
-                downloadPath.setDisable(false);
-                btnSelectDownload.setDisable(false);
-                btnSelectInstall.setDisable(true);
-                installPath.setDisable(true);
-            } else if (btnDownload.getText().equals("取消")) {
-                downloadPath.setDisable(false);
-                btnSelectDownload.setDisable(false);
-                btnSelectInstall.setDisable(false);
-                installPath.setDisable(false);
-                btnDownload.setText(lastDownloadButtonText);
-            }
-        });
+        if ("下载".equals(btnDownload.getText())) {
+            lastDownloadButtonText = btnDownload.getText();
+            btnDownload.setText("取消");
+            downloadPath.setDisable(true);
+            btnSelectDownload.setDisable(true);
+        } else if (btnDownload.getText().equals("安装")) {
+            lastDownloadButtonText = btnDownload.getText();
+            btnDownload.setText("取消");
+            btnSelectInstall.setDisable(true);
+            installPath.setDisable(true);
+        } else if (btnDownload.getText().equals("取消")) {
+            downloadPath.setDisable(false);
+            btnSelectDownload.setDisable(false);
+            btnSelectInstall.setDisable(false);
+            installPath.setDisable(false);
+            btnDownload.setText(lastDownloadButtonText);
+        }
     }
 
     /**
@@ -234,29 +242,46 @@ public class HomeController {
     }
 
     private void install(String source, String targetDirectory) {
-        Path sourcePath = Path.of(source);
-        long sum = sourcePath.toFile().length();
-        AtomicLong atomicLong = new AtomicLong();
-        Random random = new Random();
-        ZipUtil.unzip(sourcePath, Path.of(targetDirectory), (name, size) -> {
-            long l = atomicLong.addAndGet(size);
-            if (l < sum && random.nextInt(8) != 0) {
-                return;
+        (downloadOrUnzipThread = new Thread(() -> {
+            try {
+                Path sourcePath = Path.of(source);
+                long sum = sourcePath.toFile().length();
+                AtomicLong atomicLong = new AtomicLong();
+                //Random random = new Random();
+                ZipUtil.unzip(sourcePath, Path.of(targetDirectory), (name, size) -> {
+                    long l = atomicLong.addAndGet(size);
+                    /*if (l < sum && random.nextInt(5) != 0) {
+                        return;
+                    }*/
+                    Platform.runLater(() -> {
+                        if (l < sum) {
+                            double progress = (double) l / sum;
+                            progressLabel.setText((int) (progress * 100) + "%  " + name);
+                            progressBar.setProgress(progress);
+                        } else {
+                            progressBar.setProgress(1);
+                            progressLabel.setText("安装完成");
+                            btnDownload.setText("安装完成");
+                            btnDownload.setDisable(true);
+                            btnDownload.setVisible(false);
+                        }
+                    });
+                });
+            } finally {
+                Platform.runLater(() -> {
+                    if (progressBar.getProgress() < 1) {
+                        btnDownload.setText("安装");
+                        progressLabel.setText((int)(progressBar.getProgress() * 100) + "%");
+                    } else {
+                        progressBar.setProgress(1);
+                        progressLabel.setText("安装完成");
+                        btnDownload.setText("安装完成");
+                        btnDownload.setDisable(true);
+                        btnDownload.setVisible(false);
+                    }
+                });
             }
-            Platform.runLater(() -> {
-                if (l < sum) {
-                    double progress = (double) l / sum;
-                    progressLabel.setText((int)(progress * 100) + "%  " + name);
-                    progressBar.setProgress(progress);
-                } else {
-                    progressBar.setProgress(1);
-                    progressLabel.setText("安装完成");
-                    btnDownload.setText("安装完成");
-                    btnDownload.setDisable(true);
-                    btnDownload.setVisible(false);
-                }
-            });
-        });
+        })).start();
     }
 
     private void download(final String url, final String destDirectory, final String destFileName, final List<String> headers, final Runnable installRunnable) {

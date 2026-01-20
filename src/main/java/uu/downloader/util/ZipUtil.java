@@ -37,6 +37,9 @@ public class ZipUtil {
             ArchiveEntry entry;
             // 遍历ZIP中的每个条目（文件/文件夹）
             while ((entry = zis.getNextEntry()) != null) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
                 if (zipping != null) {
                     zipping.accept(entry.getName(), entry.getSize());
                 }
