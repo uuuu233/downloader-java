@@ -28,6 +28,9 @@ applicationName = uumxd.exe
 
 我要从 `文件元信息` 中获取下载文件的 `url`, 并下载文件
 
+## 设置文件元信息
+一般可以准备一份 `markdown` 格式的 `tencent文档` 链接 放在 `file-metadata.txt` 中
+
 ## 下载资源的要求
 
 压缩格式必须为 `zip`
@@ -35,6 +38,7 @@ applicationName = uumxd.exe
 压缩包内资源禁止套娃, 即让压缩包的根目录就是所有文件
 
 下载器会创建一个文件夹(`文件元信息` 的 `directoryName` 作为文件夹名字), 并把资源解压到这个文件夹下
+
 
 
 ## 卖萌
