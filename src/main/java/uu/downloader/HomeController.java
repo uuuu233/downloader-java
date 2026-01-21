@@ -343,8 +343,6 @@ public class HomeController {
                 // 取消下载任务
                 Aria2c.remove();
                 Platform.runLater(() -> {
-                    System.out.println(progressBar.getProgress() < 1);
-                    System.out.println(progressBar.getProgress());
                     if (progressBar.getProgress() < 1) {
                         btnDownload.setText("下载");
                         progressLabel.setText((int)(progressBar.getProgress() * 100) + "%");
