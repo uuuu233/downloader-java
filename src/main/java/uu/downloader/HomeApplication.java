@@ -20,7 +20,7 @@ public class HomeApplication extends Application {
     public static final Image logo = new Image(HomeApplication.class.getResourceAsStream("/static/icon.png"));
 
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(Stage stage) throws IOException, InterruptedException {
         stage.getIcons().add(logo);
         // 设置无边框 标题 可改大小
         stage.initStyle(StageStyle.TRANSPARENT);

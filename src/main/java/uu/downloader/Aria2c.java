@@ -8,12 +8,15 @@ import uu.downloader.util.HttpClientUtil;
 import uu.downloader.util.JsonUtil;
 import uu.downloader.util.ZipUtil;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ServerSocket;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Aria2c {
     private static final Path aria2cPath = Path.of(System.getenv("APPDATA"), "uu", "aria2c", "aria2c.exe");
@@ -22,15 +25,38 @@ public class Aria2c {
     public static String downloadJobId;
     public static JsonMapper mapper = JsonUtil.mapper;
 
-    public static void init() throws IOException {
+    public static void init() throws IOException, InterruptedException {
         if (!Files.exists(aria2cPath)) {
             try (InputStream resourceAsStream = Aria2c.class.getResourceAsStream("/static/aria2c.exe")) {
                 ZipUtil.unzip(resourceAsStream, aria2cPath);
             }
         }
-        ServerSocket serverSocket = new ServerSocket(0);
-        int port = serverSocket.getLocalPort();
-        serverSocket.close();
+        Process process = Runtime.getRuntime().exec("cmd /c netstat -an | findstr \"LISTENING\"");
+        process.waitFor();
+        Set<Integer> ports = new HashSet<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            List<String> result = reader.readAllLines();
+            for (String line : result) {
+                for (String item : line.split("\\s+")) {
+                    int lastIndex = item.lastIndexOf(":");
+                    if (lastIndex > 0) {
+                        ports.add(Integer.parseInt(item.substring(lastIndex + 1)));
+                        break;
+                    }
+                }
+            }
+        }
+        process.destroy();
+        int port = 0;
+        for (int i = 0; i < 25; i++) {
+            if (!ports.contains(i + 10075)) {
+                port = i + 10075;
+                break;
+            }
+        }
+        if (port == 0) {
+            throw new IllegalStateException();
+        }
 
         List<String> args = List.of(
                 "--enable-rpc",
@@ -40,7 +66,6 @@ public class Aria2c {
                 "-x 8",
                 "-s 8",
                 "-c");
-        // System.out.println(String.join(" ", args));
         WindowsJobObject.CreateProcessAndSetJobObject(aria2cPath.normalize() + " " + String.join(" ", args));
         address = "http://localhost:" + port + "/jsonrpc";
         // address = "http://localhost:1688/jsonrpc";
