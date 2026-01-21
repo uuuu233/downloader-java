@@ -91,7 +91,7 @@ public class Aria2c {
         downloadJobInfo.totalLength = totalLength;
         downloadJobInfo.speed = speed;
         downloadJobInfo.speedDescription = speedDescription;
-        downloadJobInfo.progress = completedLength / (double)totalLength;
+        downloadJobInfo.progress = totalLength == 0 ? 0 : completedLength / (double)totalLength;
         downloadJobInfo.progressDescription = (int)(downloadJobInfo.progress * 100) + "%";
         downloadJobInfo.message = resultNode.path("message").asText();
         return downloadJobInfo;

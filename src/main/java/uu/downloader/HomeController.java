@@ -252,6 +252,7 @@ public class HomeController {
 
     private void install(String source, String targetDirectory) {
         (downloadOrUnzipThread = new Thread(() -> {
+            Exception exception = null;
             try {
                 Path sourcePath = Path.of(source);
                 long sum = sourcePath.toFile().length();
@@ -276,6 +277,8 @@ public class HomeController {
                         }
                     });
                 });
+            } catch (Exception e) {
+                exception = e;
             } finally {
                 Platform.runLater(() -> {
                     if (progressBar.getProgress() < 1) {
@@ -289,12 +292,19 @@ public class HomeController {
                         btnDownload.setVisible(false);
                     }
                 });
+                if (exception != null) {
+                    String message = Objects.toString(exception.getMessage(), "");
+                    Platform.runLater(() -> {
+                        FxUtil.showOkAlert("安装失败" + (message.isEmpty() ? "" : message));
+                    });
+                }
             }
         })).start();
     }
 
     private void download(final String url, final String destDirectory, final String destFileName, final List<String> headers, final Runnable installRunnable) {
         (downloadOrUnzipThread = new Thread(() -> {
+            Exception exception = null;
             try {
                 try {
                     Aria2c.addUrl(url, destDirectory, destFileName, headers);
@@ -315,7 +325,7 @@ public class HomeController {
                             progressBar.setProgress(downloadJobInfo.progress);
                         });
                     } else if ("error".equals(status)) {
-                        progressLabel.setText("下载错误: " + downloadJobInfo.message);
+                        Platform.runLater(() -> progressLabel.setText("下载错误: " + downloadJobInfo.message));
                         throw new RuntimeException();
                     } else if ("removed".equals(status)) {
                         break;
@@ -327,12 +337,14 @@ public class HomeController {
                         break;
                     }
                 }
-            } catch (InterruptedException _) {
-                // ignore
+            } catch (Exception e) {
+                exception = e;
             } finally {
                 // 取消下载任务
                 Aria2c.remove();
                 Platform.runLater(() -> {
+                    System.out.println(progressBar.getProgress() < 1);
+                    System.out.println(progressBar.getProgress());
                     if (progressBar.getProgress() < 1) {
                         btnDownload.setText("下载");
                         progressLabel.setText((int)(progressBar.getProgress() * 100) + "%");
@@ -341,7 +353,12 @@ public class HomeController {
                         progressLabel.setText("下载完成");
                     }
                 });
-                if (progressBar.getProgress() >= 1) {
+                if (exception != null) {
+                    String message = Objects.toString(exception.getMessage(), "");
+                    Platform.runLater(() -> {
+                        FxUtil.showOkAlert("下载失败" + (message.isEmpty() ? "" : message));
+                    });
+                } else if (progressBar.getProgress() >= 1) {
                     installRunnable.run();
                 }
             }
