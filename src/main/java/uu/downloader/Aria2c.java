@@ -27,8 +27,8 @@ public class Aria2c {
 
     public static void init() throws IOException, InterruptedException {
         if (!Files.exists(aria2cPath)) {
-            try (InputStream resourceAsStream = Aria2c.class.getResourceAsStream("/static/aria2c.exe")) {
-                ZipUtil.unzip(resourceAsStream, aria2cPath);
+            try (InputStream resourceAsStream = Aria2c.class.getResourceAsStream("/static/aria2c.zip")) {
+                ZipUtil.unzip(resourceAsStream, aria2cPath.getParent());
             }
         }
         Process process = Runtime.getRuntime().exec("cmd /c netstat -an | findstr \"LISTENING\"");
