@@ -30,10 +30,12 @@ public class HomeApplication extends Application {
         // 设置背景图片
         InputStream backgroundStream;
         try (InputStream sm = HomeApplication.class.getResourceAsStream("/static/background.png")) {
-            if (sm.read() == 137 && sm.read() == 80 && sm.read() == 78 && sm.read() == 71) {
+            byte[] bytes = new byte[4];
+            sm.read(bytes);
+            if (bytes[0] == (byte) 137 && bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71) {
                 backgroundStream = HomeApplication.class.getResourceAsStream("/static/background.png");
             } else {
-                int length = (sm.read() << 24) | (sm.read() << 16) | (sm.read() << 8) | sm.read();
+                int length = ((bytes[0] & 0xFF) << 24) | ((bytes[1] & 0xFF) << 16) | ((bytes[2] & 0xFF) << 8) | (bytes[3] & 0xFF);
                 byte[] bs = new byte[length];
                 sm.read(bs);
                 backgroundStream = new ByteArrayInputStream(bs);
