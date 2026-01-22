@@ -1,0 +1,5 @@
+准备好文件的下载链接
+新建一份 腾讯文档, 格式为 markdown文档
+写上文件元信息, 可参考图片[markdown模板.png]
+打开 "下载器生成器.exe", 生成最终下载器
+图标可以用 "ResourceHacker.exe" 更换
